@@ -2,17 +2,20 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import csv
-import time
 import transliterate
+from formz import prox
 title='a'
 
 maxpage = 80
 #id = 44399
-def load_data(id,page):
+def load_data(id,page,proxy):
     url = \
         'https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&from_developer=1&newobject[0]=%d&offer_type=flat&p=%d'\
         % (id,page)
-    r = requests.get(url)
+    try:
+        r = requests.get(url, proxies={'http': proxy})
+    except requests.exceptions.ConnectionError:
+        r.status_code = "Connection refused"
     return r.text
 def parce_page(text):
     global maxpage
@@ -72,7 +75,6 @@ def parce_page(text):
                })
         except IndexError:
             continue
-    #print(results[i])
     return results
 def write_csv(lst):
     with open(title + '.csv', 'w', newline='') as csv_file:
@@ -85,17 +87,18 @@ def add_csv(lst):
         adder.writerows(lst)
 def main(id):
     cp=1
+    proxy = prox.main()
    # maxpage=80
     #id = 44399
 
     while(cp<=maxpage):
-        res = parce_page(load_data(id,cp))
+        res = parce_page(load_data(id,cp,proxy))
         print(cp, maxpage)
         if cp == 1:
             write_csv(res)
         else:
             add_csv(res)
         cp += 1
-        time.sleep(5)
+        #time.sleep(5)
 if __name__ == '__main__':
     main()
